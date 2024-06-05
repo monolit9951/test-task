@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: 'rabbitmq:3-management-alpine'
+    restart: always
+    container_name: 'rabbitmq'
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    networks:
+      - item_network
+
+  mongodb:
+    image: 'mongo:latest'
+    container_name: 'mongoTest'
+    ports:
+      - '27018:27017'
+    networks:
+      - item_network
+
+  redis:
+    image: redis
+    container_name: redis
+    ports:
+      - 6379:6379
+    networks:
+      - item_network
+
+  backend:
+    build: .
+    restart: always
+    ports:
+      - '8080:8080'
+    depends_on:
+      - mongodb
+      - rabbitmq
+      - redis
+    environment:
+      - dbUrl=mongodb://mongoTest:27017/testDb
+      - spring.rabbitmq.host=rabbitmq
+      - spring.rabbitmq.port=5672
+      - spring.rabbitmq.username=guest
+      - spring.rabbitmq.password=guest
+      - spring.data.redis.host=redis
+      - spring.data.redis.port=6379
+    networks:
+      - item_network
+
+networks:
+  item_network:
+    name: item_network
